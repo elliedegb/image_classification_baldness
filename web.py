@@ -3,7 +3,7 @@ import pickle
 import base64
 import numpy as np
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageFilter
 from skimage.transform import resize
 from skimage.feature import hog
 from skimage.color import rgb2gray
@@ -82,24 +82,20 @@ def classify(image, model, class_names):
 # =========================
 def create_certificate(user_img, badge_path, class_name, conf_score):
 
-    W, H = 900, 650
+    W, H = 1400, 1000
     cert = Image.new("RGB", (W, H), (252, 250, 245))
     draw = ImageDraw.Draw(cert)
 
-    # =========================
-    # BORDER (kept inside canvas)
-    # =========================
-    draw.rectangle([(25, 25), (W - 25, H - 25)], outline=(180, 160, 120), width=3)
-    draw.rectangle([(45, 45), (W - 45, H - 45)], outline=(210, 200, 170), width=2)
+    # BORDER
+    draw.rectangle([(40, 40), (W - 40, H - 40)], outline=(180, 160, 120), width=6)
+    draw.rectangle([(80, 80), (W - 80, H - 80)], outline=(210, 200, 170), width=4)
 
-    # =========================
     # FONTS
-    # =========================
     try:
-        title_font = ImageFont.truetype("timesbd.ttf", 90) 
+        title_font = ImageFont.truetype("timesbd.ttf", 90)
         subtitle_font = ImageFont.truetype("times.ttf", 50)
         label_font = ImageFont.truetype("times.ttf", 40)
-        value_font = ImageFont.truetype("timesbd.ttf", 48)
+        value_font = ImageFont.truetype("timesbd.ttf", 55)
     except:
         title_font = subtitle_font = label_font = value_font = ImageFont.load_default()
 
@@ -108,65 +104,82 @@ def create_certificate(user_img, badge_path, class_name, conf_score):
         w = bbox[2] - bbox[0]
         draw.text(((W - w) / 2, y), text, font=font, fill=fill)
 
-    # =========================
     # HEADER
-    # =========================
-    center("CERTIFICATE OF DIAGNOSTIC EVALUATION", 55, title_font, (70, 60, 50))
-    center("Official Hair Health Assessment Report", 100, subtitle_font, (120, 110, 100))
+    center("CERTIFICATE OF DIAGNOSTIC EVALUATION", 120, title_font, (70, 60, 50))
+    center("Official Hair Health Assessment Report", 240, subtitle_font, (120, 110, 100))
 
-    # =========================
     # USER IMAGE
-    # =========================
-    user_img = ImageOps.fit(user_img, (340, 340))
-    cert.paste(user_img, (280, 170))
+    user_img = ImageOps.fit(user_img, (500, 500))
+    cert.paste(user_img, (450, 320))
 
-    # =========================
     # BADGE
-    # =========================
     badge = Image.open(badge_path).convert("RGBA")
-    badge = ImageOps.fit(badge, (150, 150))
+    badge = ImageOps.fit(badge, (220, 220))
 
-    mask = Image.new("L", (150, 150), 0)
+    mask = Image.new("L", (220, 220), 0)
     m = ImageDraw.Draw(mask)
-    m.ellipse((0, 0, 150, 150), fill=255)
+    m.ellipse((0, 0, 220, 220), fill=255)
     badge.putalpha(mask)
 
-    cert.paste(badge, (700, 440), badge)
+    cert.paste(badge, (1050, 700), badge)
 
-    # =========================
+    # GOLD SEAL
+    seal_size = 200
+    seal = Image.new("RGBA", (seal_size, seal_size), (0, 0, 0, 0))
+    seal_draw = ImageDraw.Draw(seal)
+
+    center_s = seal_size // 2
+
+    for r in range(center_s, 0, -1):
+        color = (255, 215 - int(60 * (r / center_s)), 80)
+        seal_draw.ellipse((center_s - r, center_s - r, center_s + r, center_s + r), fill=color)
+
+    seal_draw.ellipse((10, 10, seal_size - 10, seal_size - 10), outline=(120, 90, 30), width=4)
+    seal_draw.ellipse((30, 30, seal_size - 30, seal_size - 30), outline=(150, 120, 40), width=2)
+
+    try:
+        seal_font = ImageFont.truetype("timesbd.ttf", 24)
+    except:
+        seal_font = ImageFont.load_default()
+
+    seal_draw.text((40, 80), "OFFICIAL", fill=(90, 70, 20), font=seal_font)
+    seal_draw.text((55, 110), "SEAL", fill=(90, 70, 20), font=seal_font)
+
+    seal = seal.rotate(-12, expand=True)
+    shadow = seal.copy().filter(ImageFilter.GaussianBlur(5))
+
+    cert.paste(shadow, (720, 310), shadow)
+    cert.paste(seal, (700, 290), seal)
+
     # RESULT
-    # =========================
     result = class_name.replace("_", " ").title()
     confidence = f"{conf_score * 100:.2f}%"
 
     color = (160, 40, 40) if class_name != "no_alopecia" else (40, 120, 80)
 
-    draw.text((170, 540), "Diagnosis:", fill=(90, 80, 70), font=label_font)
-    draw.text((330, 538), result, fill=color, font=value_font)
+    draw.text((300, 780), "Diagnosis:", fill=(90, 80, 70), font=label_font)
+    draw.text((550, 770), result, fill=color, font=value_font)
 
-    draw.text((170, 575), "Confidence:", fill=(90, 80, 70), font=label_font)
-    draw.text((330, 573), confidence, fill=(60, 60, 60), font=value_font)
+    draw.text((300, 850), "Confidence:", fill=(90, 80, 70), font=label_font)
+    draw.text((550, 840), confidence, fill=(60, 60, 60), font=value_font)
 
-    # =========================
-    # FOOTER (FIXED - INSIDE FUNCTION)
-    # =========================
+    # SIGNATURES
+    line_y = 720
+    draw.line((200, line_y, 450, line_y), fill=(120, 110, 100), width=3)
+    draw.text((240, line_y + 10), "Certified Analyst", fill=(90, 80, 70), font=label_font)
+
+    draw.line((650, line_y, 900, line_y), fill=(120, 110, 100), width=3)
+    draw.text((690, line_y + 10), "AI Evaluation System", fill=(90, 80, 70), font=label_font)
+
+    # FOOTER
     footer = "This document is automatically generated and digitally certified."
-
     bbox = draw.textbbox((0, 0), footer, font=label_font)
-    text_w = bbox[2] - bbox[0]
-    text_h = bbox[3] - bbox[1]
+    w = bbox[2] - bbox[0]
 
-    inner_bottom = H - 20
-    y_footer = inner_bottom - text_h - 10
-
-    draw.text(
-        ((W - text_w) / 2, y_footer),
-        footer,
-        fill=(140, 130, 120),
-        font=label_font
-    )
+    draw.text(((W - w) / 2, H - 80), footer, fill=(140, 130, 120), font=label_font)
 
     return cert
+
 
 
 # =========================

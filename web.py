@@ -96,10 +96,10 @@ def create_certificate(user_img, badge_path, class_name, conf_score):
     # FONTS
     # =========================
     try:
-        title_font = ImageFont.truetype("timesbd.ttf", 34)
-        subtitle_font = ImageFont.truetype("times.ttf", 20)
-        label_font = ImageFont.truetype("times.ttf", 18)
-        value_font = ImageFont.truetype("timesbd.ttf", 22)
+        title_font = ImageFont.truetype("timesbd.ttf", 90) 
+        subtitle_font = ImageFont.truetype("times.ttf", 50)
+        label_font = ImageFont.truetype("times.ttf", 40)
+        value_font = ImageFont.truetype("timesbd.ttf", 48)
     except:
         title_font = subtitle_font = label_font = value_font = ImageFont.load_default()
 

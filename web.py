@@ -230,3 +230,15 @@ if file is not None:
 
     st.subheader("🎖️ Your Certificate")
     st.image(cert, use_container_width=True)
+    # =========================
+    # DOWNLOAD BUTTON
+    # =========================
+    buf = io.BytesIO()
+    cert.save(buf, format="PNG")
+    byte_im = buf.getvalue()
+    st.download_button(
+        label="💾 Download Certificate",
+        data=byte_im,
+        file_name="baldness_certificate.png",
+        mime="image/png"
+        )

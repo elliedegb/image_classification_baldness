@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from skimage.transform import resize
 from skimage.feature import hog
 from skimage.color import rgb2gray
-
+import io
 
 # =========================
 # BACKGROUND

@@ -1,3 +1,5 @@
 streamlit
 numpy
 pillow
+scikit-image
+scikit-learn
